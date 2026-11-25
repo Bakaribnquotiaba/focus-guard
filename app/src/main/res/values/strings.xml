@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Focus Guard</string>
+    <string name="a11y_description">Focus Guard watches which app is open so it can keep Facebook to your time slots, block adult sites and dating apps, block the chat you chose, and protect its own settings. Nothing leaves your phone.</string>
+</resources>
