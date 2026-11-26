@@ -56,6 +56,14 @@ class BankingLaunchActivity : Activity() {
             return
         }
         pause(this, pkg)
+        // The bank app may have already checked for accessibility and cached the answer:
+        // end its process so it starts fresh and checks again with Focus Guard paused.
+        handler.postDelayed({
+            try {
+                getSystemService(android.app.ActivityManager::class.java)?.killBackgroundProcesses(pkg)
+            } catch (_: Exception) {
+            }
+        }, 600)
         handler.postDelayed({
             packageManager.getLaunchIntentForPackage(pkg)?.let {
                 try {
@@ -64,6 +72,6 @@ class BankingLaunchActivity : Activity() {
                 }
             }
             finish()
-        }, 900)
+        }, 1500)
     }
 }
