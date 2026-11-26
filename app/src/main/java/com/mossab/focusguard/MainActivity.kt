@@ -209,11 +209,8 @@ class MainActivity : Activity() {
             return
         }
         AlertDialog.Builder(this)
-            .setTitle("Pause for banking")
-            .setMessage(
-                "Focus Guard stops watching the screen so the bank app can open. " +
-                    "Until you turn Focus Guard back on in Accessibility, only banking apps have internet.",
-            )
+            // A dialog with a message hides its list, so the explanation goes in the title.
+            .setTitle("Pause for banking: only banking apps keep internet until you turn Focus Guard back on")
             .setItems(apps.map { "Open " + it.second }.toTypedArray()) { _, i ->
                 Prefs.setBankingPause(this, true)
                 FilterVpnService.restart(this)
