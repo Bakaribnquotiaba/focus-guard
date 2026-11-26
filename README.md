@@ -21,11 +21,18 @@ Banking and payment apps (InstaPay, bank apps, wallets, Fawry, Vodafone Cash) ar
 
 If a banking app then says it has no internet, turn off *Block connections without VPN* in the VPN settings (keep *Always-on VPN* on): Android blocks skipped apps while that switch is on.
 
-### Pause for banking
+### Banking apps are automatic
 
-InstaPay (and some bank apps) refuse to open while any accessibility app is on. Tap **Pause for banking (InstaPay)** at the top of Focus Guard and pick the app: Focus Guard stops watching the screen and opens it. While paused, **only banking apps have internet**. When you're done, tap **Turn Focus Guard back on** (Accessibility → Focus Guard → on) and everything goes back to normal.
+InstaPay and some bank apps refuse to open while any accessibility app is on. When you open one, Focus Guard pauses its screen watching by itself and reopens the bank app. While paused, **only banking apps have internet**.
 
-The same internet cut-off kicks in if Focus Guard's accessibility is switched off any other way without the PIN.
+To make Focus Guard switch itself back on when you leave the bank app, do this **once** from a computer:
+
+1. Phone: Settings → About phone → tap *Build number* 7 times → Developer options → *USB debugging* on.
+2. Connect it to a computer with [platform-tools](https://developer.android.com/tools/releases/platform-tools) and run:
+   `adb shell pm grant com.mossab.focusguard android.permission.WRITE_SECURE_SETTINGS`
+3. In Focus Guard, allow **Usage access** (step 8) so it knows when you've left the bank app.
+
+Without that one-time step, you turn it back on yourself: Focus Guard → *Turn Focus Guard back on*. With it, Focus Guard also switches itself straight back on if anyone turns its accessibility off without the PIN.
 
 ## Install with Obtainium
 

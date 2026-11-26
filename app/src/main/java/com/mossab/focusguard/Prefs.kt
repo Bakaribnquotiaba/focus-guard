@@ -60,6 +60,10 @@ object Prefs {
     // ---- Banking pause: screen watching off, only banking apps online ----
     fun bankingPause(c: Context) = sp(c).getBoolean("bankingPause", false)
     fun setBankingPause(c: Context, on: Boolean) = sp(c).edit().putBoolean("bankingPause", on).apply()
+    fun bankingApp(c: Context): String? = sp(c).getString("bankingApp", null)
+    fun setBankingApp(c: Context, pkg: String?) = sp(c).edit().putString("bankingApp", pkg).apply()
+    fun bankingPausedAt(c: Context) = sp(c).getLong("bankingPausedAt", 0L)
+    fun setBankingPausedAt(c: Context, t: Long) = sp(c).edit().putLong("bankingPausedAt", t).apply()
 
     // ---- Dating app waiting to be uninstalled ----
     fun pendingUninstall(c: Context): String? = sp(c).getString("pendingUninstall", null)

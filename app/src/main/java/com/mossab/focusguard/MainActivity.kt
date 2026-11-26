@@ -113,6 +113,20 @@ class MainActivity : Activity() {
             startActivity(Intent(Settings.ACTION_DATE_SETTINGS))
         }
 
+        heading("Banking apps (automatic)", 18f)
+        note("Opening InstaPay or another bank app pauses Focus Guard by itself. While paused, only banking apps have internet.")
+        row(
+            "7. One-time step: let Focus Guard switch itself back on after banking",
+            AutoAccessibility.canSwitch(this), "How",
+        ) { showGrantHelp() }
+        row(
+            "8. Usage access (so it knows when you leave the bank app)",
+            AutoAccessibility.hasUsageAccess(this), "Allow",
+        ) {
+            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            toast("Find Focus Guard and allow usage access.")
+        }
+
         heading("Facebook today", 18f)
         val now = Calendar.getInstance()
         val current = Rules.currentSlot(now)
@@ -186,6 +200,25 @@ class MainActivity : Activity() {
 
     // ------------------------------------------------------------------ banking pause
 
+    private fun showGrantHelp() {
+        AlertDialog.Builder(this)
+            .setTitle("One-time step")
+            .setMessage(
+                "Android doesn't let any app switch its own accessibility back on until you allow it once from a computer.\n\n" +
+                    "1. On the phone: Settings → About phone → tap Build number 7 times, then Settings → System → Developer options → turn on USB debugging.\n" +
+                    "2. Connect the phone to a computer with platform-tools (adb) installed.\n" +
+                    "3. Run this command (tap Copy):\n\n" + AutoAccessibility.ADB_COMMAND + "\n\n" +
+                    "After that it is fully automatic, and it survives updates. You can turn USB debugging off again.",
+            )
+            .setPositiveButton("Copy command") { _, _ ->
+                val cm = getSystemService(android.content.ClipboardManager::class.java)
+                cm?.setPrimaryClip(android.content.ClipData.newPlainText("adb", AutoAccessibility.ADB_COMMAND))
+                toast("Copied")
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
     private fun startBankingPause() {
         if (!FilterVpnService.running) {
             toast("Start the web filter first (step 3), then try again.")
@@ -212,12 +245,7 @@ class MainActivity : Activity() {
             // A dialog with a message hides its list, so the explanation goes in the title.
             .setTitle("Pause for banking: only banking apps keep internet until you turn Focus Guard back on")
             .setItems(apps.map { "Open " + it.second }.toTypedArray()) { _, i ->
-                Prefs.setBankingPause(this, true)
-                FilterVpnService.restart(this)
-                GuardAccessibilityService.instance?.pauseForBanking()
-                box.postDelayed({
-                    startActivity(apps[i].third.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                }, 1200)
+                BankingLaunchActivity.start(this, apps[i].first)
             }
             .setNegativeButton("Cancel", null)
             .show()

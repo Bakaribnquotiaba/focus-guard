@@ -91,6 +91,11 @@ class GuardAccessibilityService : AccessibilityService() {
         null
     }
 
+    private val bankingCache = HashMap<String, Boolean>()
+
+    private fun isBanking(pkg: String): Boolean =
+        bankingCache.getOrPut(pkg) { pkg != packageName && Rules.isFinanceApp(this, pkg) }
+
     private fun isDating(pkg: String): Boolean =
         datingCache.getOrPut(pkg) { Rules.isDatingApp(this, pkg) }
 
@@ -201,6 +206,11 @@ class GuardAccessibilityService : AccessibilityService() {
 
         if (Penalty.isLockedOut(this)) {
             if (stateChanged) enforceLockout()
+            return
+        }
+
+        if (stateChanged && isBanking(pkg)) {
+            if (once("banking", 3000)) BankingLaunchActivity.start(this, pkg)
             return
         }
 

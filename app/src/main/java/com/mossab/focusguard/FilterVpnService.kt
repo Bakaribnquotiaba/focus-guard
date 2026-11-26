@@ -91,13 +91,39 @@ class FilterVpnService : VpnService() {
         return now - watchingLostAt > WATCHING_GRACE_MS
     }
 
+    /** Turns screen watching back on once you have left the banking app (needs the one-time grant). */
+    private fun autoResume() {
+        if (GuardAccessibilityService.instance != null) return
+        if (!AutoAccessibility.canSwitch(this)) return
+        if (Prefs.bankingPause(this)) {
+            val bank = Prefs.bankingApp(this)
+            val pausedFor = System.currentTimeMillis() - Prefs.bankingPausedAt(this)
+            val front = AutoAccessibility.lastForegroundApp(this)
+            val pm = getSystemService(android.os.PowerManager::class.java)
+            val screenOff = pm != null && !pm.isInteractive
+            val leftBank = front != null && front != bank && front != packageName
+            val tooLong = pausedFor > 15 * 60_000L
+            val noUsageInfo = front == null && pausedFor > 5 * 60_000L
+            if (pausedFor > 20_000L && (leftBank || screenOff || tooLong || noUsageInfo)) {
+                AutoAccessibility.enable(this)
+            }
+        } else if (!Prefs.isUnlocked(this)) {
+            // Switched off without the PIN: switch it straight back on.
+            AutoAccessibility.enable(this)
+        }
+    }
+
     private val watchdog = object : Runnable {
         override fun run() {
+            try {
+                autoResume()
+            } catch (_: Exception) {
+            }
             if (running && wantBankingOnly() != bankingOnly) {
                 shutdown()
                 startTunnel()
             }
-            if (running) main.postDelayed(this, 15_000)
+            if (running) main.postDelayed(this, if (Prefs.bankingPause(this@FilterVpnService)) 5_000 else 15_000)
         }
     }
 
