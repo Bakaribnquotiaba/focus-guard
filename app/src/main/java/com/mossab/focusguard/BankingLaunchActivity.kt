@@ -50,20 +50,27 @@ class BankingLaunchActivity : Activity() {
         box.addView(bigText("Opening your bank app…", 22f, bold = true))
         setContentView(box)
 
-        val pkg = intent.getStringExtra("pkg")
+        handleLaunch(intent)
+    }
+
+    // A second open of the bank app reaches here too if this screen is still around.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleLaunch(intent)
+    }
+
+    private fun handleLaunch(i: Intent) {
+        val pkg = i.getStringExtra("pkg")
         if (pkg == null) {
             finish()
             return
         }
+        handler.removeCallbacksAndMessages(null)
         pause(this, pkg)
         // The bank app may have already checked for accessibility and cached the answer:
         // end its process so it starts fresh and checks again with Focus Guard paused.
-        handler.postDelayed({
-            try {
-                getSystemService(android.app.ActivityManager::class.java)?.killBackgroundProcesses(pkg)
-            } catch (_: Exception) {
-            }
-        }, 600)
+        handler.postDelayed({ killBank(pkg) }, 500)
+        handler.postDelayed({ killBank(pkg) }, 1100)
         handler.postDelayed({
             packageManager.getLaunchIntentForPackage(pkg)?.let {
                 try {
@@ -72,6 +79,13 @@ class BankingLaunchActivity : Activity() {
                 }
             }
             finish()
-        }, 1500)
+        }, 1600)
+    }
+
+    private fun killBank(pkg: String) {
+        try {
+            getSystemService(android.app.ActivityManager::class.java)?.killBackgroundProcesses(pkg)
+        } catch (_: Exception) {
+        }
     }
 }
