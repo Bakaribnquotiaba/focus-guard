@@ -52,6 +52,11 @@ object Prefs {
     fun vpnWanted(c: Context) = sp(c).getBoolean("vpnWanted", false)
     fun setVpnWanted(c: Context, on: Boolean) = sp(c).edit().putBoolean("vpnWanted", on).apply()
 
+    // ---- Apps the web filter leaves alone (banking apps that refuse to run with a VPN) ----
+    fun trustedApps(c: Context): Set<String> = sp(c).getStringSet("trustedApps", emptySet()) ?: emptySet()
+    fun setTrustedApps(c: Context, pkgs: Set<String>) =
+        sp(c).edit().putStringSet("trustedApps", HashSet(pkgs)).apply()
+
     // ---- Dating app waiting to be uninstalled ----
     fun pendingUninstall(c: Context): String? = sp(c).getString("pendingUninstall", null)
     fun setPendingUninstall(c: Context, pkg: String?) =

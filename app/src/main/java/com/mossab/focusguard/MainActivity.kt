@@ -86,7 +86,7 @@ class MainActivity : Activity() {
         row("3. Web filter (adult sites, also incognito)", FilterVpnService.running, "Start") { startVpn() }
         row("4. Always-on VPN (so the filter can't be switched off)", null, "Open") {
             startActivity(Intent(Settings.ACTION_VPN_SETTINGS))
-            toast("Tap the ⚙ next to Focus Guard → turn on Always-on VPN and Block connections without VPN.")
+            toast("Tap the ⚙ next to Focus Guard → turn on Always-on VPN. Leave Block connections without VPN off, or banking apps lose internet.")
         }
         row(
             "5. No battery limits (Honor: App launch → Manage manually, all on)",
@@ -119,6 +119,12 @@ class MainActivity : Activity() {
         heading("Always blocked", 18f)
         note("Adult sites and dating apps: very hard vibration, then the phone locks for ${Rules.LOCKOUT_MINUTES} minutes.")
         note("Penalties today: ${Prefs.penaltiesToday(this)}")
+
+        heading("Trusted apps", 18f)
+        note("Banking and payment apps (InstaPay, wallets, banks) skip the web filter so they keep working. Apps skipped now: ${FilterVpnService.excludedApps(this).size}.")
+        button("Choose more trusted apps") {
+            if (Prefs.isUnlocked(this)) pickTrustedApps() else askPin { pickTrustedApps() }
+        }
 
         heading("PIN", 18f)
         if (Prefs.isUnlocked(this)) {
@@ -163,6 +169,38 @@ class MainActivity : Activity() {
         Prefs.setVpnWanted(this, false)
         startService(Intent(this, FilterVpnService::class.java).setAction(FilterVpnService.ACTION_STOP))
         box.postDelayed({ render() }, 800)
+    }
+
+    // ------------------------------------------------------------------ trusted apps
+
+    private fun pickTrustedApps() {
+        val pm = packageManager
+        val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        @Suppress("DEPRECATION")
+        val apps = pm.queryIntentActivities(launcher, 0)
+            .map { it.activityInfo.packageName to it.loadLabel(pm).toString() }
+            .distinctBy { it.first }
+            .filter { (pkg, _) ->
+                pkg != packageName && pkg !in Rules.KNOWN_BROWSERS && !Rules.isDatingApp(this, pkg)
+            }
+            .sortedBy { it.second.lowercase() }
+        val chosen = HashSet(Prefs.trustedApps(this))
+        val checked = BooleanArray(apps.size) { apps[it].first in chosen }
+        AlertDialog.Builder(this)
+            .setTitle("Apps the web filter should skip")
+            .setMultiChoiceItems(apps.map { it.second }.toTypedArray(), checked) { _, i, on ->
+                if (on) chosen.add(apps[i].first) else chosen.remove(apps[i].first)
+            }
+            .setPositiveButton("Save") { _, _ ->
+                Prefs.setTrustedApps(this, chosen)
+                if (FilterVpnService.running) {
+                    startService(Intent(this, FilterVpnService::class.java).setAction(FilterVpnService.ACTION_RESTART))
+                }
+                toast("Saved. Restart the trusted app if it was open.")
+                render()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     // ------------------------------------------------------------------ PIN

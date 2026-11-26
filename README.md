@@ -15,6 +15,12 @@ A personal Android self-control app (made for an Honor X9c, works on Android 10+
 
 A real power-off isn't possible on an Honor X9c: Android only lets rooted phones or the system itself shut down, and Honor phones can't be rooted. The 15-minute lock replaces it.
 
+## Banking apps
+
+Banking and payment apps (InstaPay, bank apps, wallets, Fawry, Vodafone Cash) are left out of the web filter automatically, because many refuse to open while a VPN is on. To skip another app, open Focus Guard → **Choose more trusted apps** (needs the PIN).
+
+If a banking app then says it has no internet, turn off *Block connections without VPN* in the VPN settings (keep *Always-on VPN* on): Android blocks skipped apps while that switch is on.
+
 ## Install with Obtainium
 
 1. In Obtainium tap **Add app** and paste `https://github.com/Bakaribnquotiaba/focus-guard`.
@@ -25,7 +31,7 @@ A real power-off isn't possible on an Honor X9c: Android only lets rooted phones
 1. Open Focus Guard and create your PIN. You then have 30 minutes to finish setup.
 2. **Device admin** → Turn on.
 3. **Web filter** → Start, accept the VPN request.
-4. **Always-on VPN** → tap the ⚙ next to Focus Guard → turn on *Always-on VPN* and *Block connections without VPN*.
+4. **Always-on VPN** → tap the ⚙ next to Focus Guard → turn on *Always-on VPN*. Leave *Block connections without VPN* off, otherwise banking apps that skip the filter lose internet.
 5. **Battery** → Allow. On Honor also: Settings → Apps → App launch → Focus Guard → *Manage manually*, all three switches on.
 6. **Automatic date & time** → on (and automatic time zone).
 7. **Accessibility** → Installed apps → Focus Guard → on. If it's greyed out: Settings → Apps → Focus Guard → ⋮ → *Allow restricted settings*, then try again.

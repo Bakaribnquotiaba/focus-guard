@@ -120,6 +120,31 @@ object Rules {
         return BLOCKED_CONTACT_NAMES.any { t.contains(it) }
     }
 
+    // ---- Banking and payment apps (skip the web filter; many refuse to run with a VPN on) ----
+
+    val FINANCE_PACKAGES = setOf(
+        "com.egyptianbanks.instapay", "com.ebc.instapay", "com.instapay.egypt",
+        "com.emeint.android.myservices", // Vodafone Cash
+        "com.fawry.myfawry", "com.fawry.retailer", "com.valu.app", "com.paymob.wallet",
+    )
+    private val FINANCE_WORDS = listOf(
+        "bank", "instapay", "insta pay", "wallet", "cash", "fawry", "valu", "pay",
+        "بنك", "مصرف", "انستا", "محفظة", "كاش", "فوري",
+    )
+
+    fun isFinanceApp(context: Context, pkg: String): Boolean {
+        val p = pkg.lowercase()
+        if (p in FINANCE_PACKAGES || p.contains("instapay") || p.contains("bank")) return true
+        if (p in KNOWN_BROWSERS) return false
+        val label = try {
+            val pm = context.packageManager
+            pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString().lowercase()
+        } catch (e: PackageManager.NameNotFoundException) {
+            return false
+        }
+        return FINANCE_WORDS.any { label.contains(it) }
+    }
+
     // ---- Browsers ---------------------------------------------------------------------------
 
     val KNOWN_BROWSERS = setOf(

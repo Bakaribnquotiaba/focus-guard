@@ -22,6 +22,22 @@ class FilterVpnService : VpnService() {
 
     companion object {
         const val ACTION_STOP = "com.mossab.focusguard.STOP_VPN"
+        const val ACTION_RESTART = "com.mossab.focusguard.RESTART_VPN"
+
+        /** Banking apps found on the phone plus the ones picked by hand. */
+        fun excludedApps(c: Context): Set<String> {
+            val set = HashSet(Prefs.trustedApps(c))
+            try {
+                @Suppress("DEPRECATION")
+                c.packageManager.getInstalledApplications(0).forEach {
+                    if (it.packageName != c.packageName && Rules.isFinanceApp(c, it.packageName)) {
+                        set.add(it.packageName)
+                    }
+                }
+            } catch (_: Exception) {
+            }
+            return set
+        }
         private const val TUN_ADDRESS = "10.111.222.1"
         private const val FAKE_DNS = "10.111.222.2"
         private val UPSTREAMS = listOf("1.1.1.3", "1.0.0.3", "8.8.8.8")
@@ -50,13 +66,23 @@ class FilterVpnService : VpnService() {
             stopSelf()
             return START_NOT_STICKY
         }
+        if (intent?.action == ACTION_RESTART) shutdown()
         if (tun == null) startTunnel()
         return START_STICKY
     }
 
     private fun startTunnel() {
+        val excluded = excludedApps(this)
         val t = try {
             Builder()
+                .apply {
+                    for (pkg in excluded) {
+                        try {
+                            addDisallowedApplication(pkg)
+                        } catch (_: Exception) {
+                        }
+                    }
+                }
                 .setSession(Rules.APP_NAME)
                 .setMtu(4200)
                 .addAddress(TUN_ADDRESS, 32)
