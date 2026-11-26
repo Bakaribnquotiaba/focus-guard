@@ -10,7 +10,7 @@ A personal Android self-control app (made for an Honor X9c, works on Android 10+
 | **Adult sites** | Blocked in every browser, incognito too (local DNS filter + Cloudflare for Families + address-bar check). Trying one triggers the penalty. |
 | **Dating apps / sites** | Opening or installing one triggers the penalty, and the app keeps asking you to uninstall it. |
 | **Chat with "blue sea"** | Opening that conversation in Google Chat, Gmail, WhatsApp, Messenger, Telegram and other chat apps: very hard vibration and the app closes. The **3rd attempt** in a day triggers the penalty. |
-| **Penalty** | About 5 seconds of maximum vibration, then the phone locks and stays locked for **15 minutes** (every unlock is locked again). Emergency calls still work from the lock screen. |
+| **Penalty** | About 5 seconds of maximum vibration, then the phone locks and stays locked for **15 minutes** (every unlock is locked again). Emergency calls still work from the lock screen. To end it early, tap **Solve 5 questions to unlock early** and answer 5 random questions in a row (multiplication, number sequences, remainders, word problems). A wrong answer starts over after a 30-second wait. |
 | **Self-protection** | Any settings screen that shows Focus Guard (app info, accessibility, device admin, VPN) closes unless you unlocked protection with your PIN in the app (10 minutes). Device admin blocks uninstalling. |
 
 A real power-off isn't possible on an Honor X9c: Android only lets rooted phones or the system itself shut down, and Honor phones can't be rooted. The 15-minute lock replaces it.
