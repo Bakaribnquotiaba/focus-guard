@@ -157,6 +157,20 @@ object Rules {
         "org.torproject.torbrowser", "mark.via.gp", "com.google.android.googlequicksearchbox",
     )
 
+    fun findBrowsers(context: Context): Set<String> {
+        val set = HashSet(KNOWN_BROWSERS)
+        try {
+            val i = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("http://example.com"))
+            @Suppress("DEPRECATION")
+            context.packageManager.queryIntentActivities(i, PackageManager.MATCH_ALL)
+                .forEach { set.add(it.activityInfo.packageName) }
+        } catch (_: Exception) {
+        }
+        set.removeAll(FACEBOOK_PACKAGES)
+        set.remove(context.packageName)
+        return set
+    }
+
     /** Parts of a view id that mean "this is the address bar". */
     val URL_BAR_ID_HINTS = listOf("url", "omnibox", "omnibar", "location_bar", "address")
 

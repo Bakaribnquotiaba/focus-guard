@@ -66,7 +66,10 @@ class MainActivity : Activity() {
 
         if (Prefs.bankingPause(this) || FilterVpnService.bankingOnly) {
             note(
-                "Banking pause is on. Only banking apps have internet. When you're done, turn Focus Guard back on in Accessibility and everything goes back to normal.",
+                if (UsageMonitor.capable(this))
+                    "Banking pause is on. Blocking continues, except the “blue sea” chat. When you're done, tap below to go back to full mode."
+                else
+                    "Banking pause is on. Only banking apps have internet. When you're done, turn Focus Guard back on in Accessibility and everything goes back to normal.",
                 red,
             )
             button("Turn Focus Guard back on") { openOwnAccessibilitySwitch() }
@@ -79,7 +82,13 @@ class MainActivity : Activity() {
         val dpm = getSystemService(DevicePolicyManager::class.java)
         val power = getSystemService(PowerManager::class.java)
 
-        row("1. Accessibility (sees which app is open)", GuardAccessibilityService.instance != null, "Open") {
+        val bankSafe = GuardAccessibilityService.instance == null && UsageMonitor.capable(this)
+        note(
+            if (bankSafe) "Mode: Bank-safe (Accessibility off). Everything is still blocked except the “blue sea” chat. Tap Turn Focus Guard back on for full mode."
+            else "Mode: Full. Opening InstaPay switches to Bank-safe by itself (allow steps 8 and 9 so protection continues while you bank).",
+            if (bankSafe) green else null,
+        )
+        row("1. Accessibility (full mode only; InstaPay won't open while it's on)", GuardAccessibilityService.instance != null, "Open") {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             toast("Tap Installed apps → Focus Guard → turn it on. If it is greyed out: App info → ⋮ → Allow restricted settings.")
         }
@@ -110,18 +119,22 @@ class MainActivity : Activity() {
             startActivity(Intent(Settings.ACTION_DATE_SETTINGS))
         }
 
-        heading("Banking apps (automatic)", 18f)
-        note("Opening InstaPay or another bank app pauses Focus Guard by itself. While paused, only banking apps have internet.")
+        heading("Bank-safe mode", 18f)
+        note("While a bank app is open, Focus Guard keeps blocking without Accessibility. Needs steps 8 and 9. Step 7 (optional, one-time computer step) brings full mode back automatically.")
         row(
             "7. One-time step: let Focus Guard switch itself back on after banking",
             AutoAccessibility.canSwitch(this), "How",
         ) { showGrantHelp() }
         row(
-            "8. Usage access (so it knows when you leave the bank app)",
+            "8. Usage access (sees which app is open)",
             AutoAccessibility.hasUsageAccess(this), "Allow",
         ) {
             startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
             toast("Find Focus Guard and allow usage access.")
+        }
+        row("9. Display over other apps (shows the block screens)", Settings.canDrawOverlays(this), "Allow") {
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+            toast("Turn on Allow display over other apps.")
         }
 
         heading("Facebook today", 18f)

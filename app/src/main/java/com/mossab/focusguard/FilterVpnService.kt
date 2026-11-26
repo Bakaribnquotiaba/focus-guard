@@ -84,8 +84,9 @@ class FilterVpnService : VpnService() {
      * without the PIN), every app except banking apps loses internet.
      */
     private fun wantBankingOnly(): Boolean {
-        if (Prefs.bankingPause(this)) return true
-        if (GuardAccessibilityService.instance != null || Prefs.isUnlocked(this)) {
+        // With Usage access + overlay allowed, blocking continues during the pause, so internet stays on.
+        if (Prefs.bankingPause(this) && !UsageMonitor.capable(this)) return true
+        if (UsageMonitor.watching(this) || Prefs.isUnlocked(this)) {
             watchingLostAt = 0L
             return false
         }
@@ -98,6 +99,8 @@ class FilterVpnService : VpnService() {
     private fun autoResume() {
         if (GuardAccessibilityService.instance != null) return
         if (!AutoAccessibility.canSwitch(this)) return
+        // Bank-safe mode runs without Accessibility on purpose.
+        if (UsageMonitor.capable(this) && !Prefs.bankingPause(this)) return
         if (Prefs.bankingPause(this)) {
             val bank = Prefs.bankingApp(this)
             val pausedFor = System.currentTimeMillis() - Prefs.bankingPausedAt(this)
@@ -142,6 +145,7 @@ class FilterVpnService : VpnService() {
     }
 
     private fun startTunnel() {
+        UsageMonitor.start(this)
         val excluded = excludedApps(this)
         val cutOff = wantBankingOnly()
         val t = try {
@@ -243,7 +247,10 @@ class FilterVpnService : VpnService() {
     }
 
     private fun report(domain: String, cat: Blocklist.Category) {
-        main.post { GuardAccessibilityService.instance?.onBlockedDomain(domain, cat) }
+        main.post {
+            val a11y = GuardAccessibilityService.instance
+            if (a11y != null) a11y.onBlockedDomain(domain, cat) else UsageMonitor.onBlockedDomain(domain, cat)
+        }
     }
 
     private fun shutdown() {
