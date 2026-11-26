@@ -57,6 +57,10 @@ object Prefs {
     fun setTrustedApps(c: Context, pkgs: Set<String>) =
         sp(c).edit().putStringSet("trustedApps", HashSet(pkgs)).apply()
 
+    // ---- Banking pause: screen watching off, only banking apps online ----
+    fun bankingPause(c: Context) = sp(c).getBoolean("bankingPause", false)
+    fun setBankingPause(c: Context, on: Boolean) = sp(c).edit().putBoolean("bankingPause", on).apply()
+
     // ---- Dating app waiting to be uninstalled ----
     fun pendingUninstall(c: Context): String? = sp(c).getString("pendingUninstall", null)
     fun setPendingUninstall(c: Context, pkg: String?) =

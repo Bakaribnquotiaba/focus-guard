@@ -45,6 +45,21 @@ class FilterVpnService : VpnService() {
         @Volatile var running = false
             private set
 
+        /** True while only banking apps have internet. */
+        @Volatile var bankingOnly = false
+            private set
+
+        private const val TUN_ADDRESS6 = "fd00:6f63:7573::1"
+        private const val WATCHING_GRACE_MS = 60_000L
+
+        fun restart(c: Context) {
+            if (!running) return
+            try {
+                c.startService(Intent(c, FilterVpnService::class.java).setAction(ACTION_RESTART))
+            } catch (_: Exception) {
+            }
+        }
+
         fun startIfPermitted(c: Context) {
             if (!Prefs.vpnWanted(c)) return
             if (prepare(c) != null) return
@@ -59,6 +74,32 @@ class FilterVpnService : VpnService() {
     private var reader: Thread? = null
     private var pool: ExecutorService? = null
     private val main = Handler(Looper.getMainLooper())
+    private var watchingLostAt = 0L
+
+    /**
+     * When Focus Guard's screen watching is off (banking pause, or switched off in settings
+     * without the PIN), every app except banking apps loses internet.
+     */
+    private fun wantBankingOnly(): Boolean {
+        if (Prefs.bankingPause(this)) return true
+        if (GuardAccessibilityService.instance != null || Prefs.isUnlocked(this)) {
+            watchingLostAt = 0L
+            return false
+        }
+        val now = System.currentTimeMillis()
+        if (watchingLostAt == 0L) watchingLostAt = now
+        return now - watchingLostAt > WATCHING_GRACE_MS
+    }
+
+    private val watchdog = object : Runnable {
+        override fun run() {
+            if (running && wantBankingOnly() != bankingOnly) {
+                shutdown()
+                startTunnel()
+            }
+            if (running) main.postDelayed(this, 15_000)
+        }
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
@@ -73,6 +114,7 @@ class FilterVpnService : VpnService() {
 
     private fun startTunnel() {
         val excluded = excludedApps(this)
+        val cutOff = wantBankingOnly()
         val t = try {
             Builder()
                 .apply {
@@ -88,6 +130,14 @@ class FilterVpnService : VpnService() {
                 .addAddress(TUN_ADDRESS, 32)
                 .addDnsServer(FAKE_DNS)
                 .addRoute(FAKE_DNS, 32)
+                .apply {
+                    if (cutOff) {
+                        // Everything goes into the tunnel and is dropped; banking apps bypass it.
+                        addAddress(TUN_ADDRESS6, 128)
+                        addRoute("0.0.0.0", 0)
+                        addRoute("::", 0)
+                    }
+                }
                 .setBlocking(true)
                 .establish()
         } catch (_: Exception) {
@@ -95,6 +145,9 @@ class FilterVpnService : VpnService() {
         } ?: return
         tun = t
         running = true
+        bankingOnly = cutOff
+        main.removeCallbacks(watchdog)
+        main.postDelayed(watchdog, 15_000)
         pool = Executors.newFixedThreadPool(6)
         reader = Thread({ loop(t) }, "dns-filter").also { it.start() }
     }
@@ -112,6 +165,10 @@ class FilterVpnService : VpnService() {
             }
             if (n <= 0) continue
             val q = DnsPacket.parseQuery(buf, n) ?: continue
+            if (bankingOnly) {
+                write(output, DnsPacket.wrap(q, DnsPacket.blockedResponse(q)))
+                continue
+            }
             val cat = Blocklist.check(q.name)
             if (cat != Blocklist.Category.NONE) {
                 write(output, DnsPacket.wrap(q, DnsPacket.blockedResponse(q)))
@@ -162,6 +219,7 @@ class FilterVpnService : VpnService() {
 
     private fun shutdown() {
         running = false
+        main.removeCallbacks(watchdog)
         try { tun?.close() } catch (_: Exception) { }
         tun = null
         pool?.shutdownNow()

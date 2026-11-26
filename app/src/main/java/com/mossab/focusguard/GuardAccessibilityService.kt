@@ -36,6 +36,8 @@ class GuardAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        if (Prefs.bankingPause(this)) Prefs.setBankingPause(this, false)
+        if (FilterVpnService.bankingOnly) FilterVpnService.restart(this)
         browsers = findBrowsers()
 
         val pkgFilter = IntentFilter(Intent.ACTION_PACKAGE_ADDED).apply { addDataScheme("package") }
@@ -52,7 +54,7 @@ class GuardAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
-        instance = null
+        if (instance === this) instance = null
         handler.removeCallbacksAndMessages(null)
         try { unregisterReceiver(packageReceiver) } catch (_: Exception) { }
         try { unregisterReceiver(screenReceiver) } catch (_: Exception) { }
@@ -91,6 +93,13 @@ class GuardAccessibilityService : AccessibilityService() {
 
     private fun isDating(pkg: String): Boolean =
         datingCache.getOrPut(pkg) { Rules.isDatingApp(this, pkg) }
+
+    /** Banking apps refuse to run while an accessibility app is on, so switch off for a while. */
+    fun pauseForBanking() {
+        handler.removeCallbacksAndMessages(null)
+        instance = null
+        disableSelf()
+    }
 
     // ---------------------------------------------------------------- receivers
 

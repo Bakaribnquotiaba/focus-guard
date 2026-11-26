@@ -64,6 +64,19 @@ class MainActivity : Activity() {
             note("Locked for about $min more minute(s): ${Prefs.lockoutReason(this)}", red)
         }
 
+        if (Prefs.bankingPause(this) || FilterVpnService.bankingOnly) {
+            note(
+                "Banking pause is on. Only banking apps have internet. When you're done, turn Focus Guard back on in Accessibility and everything goes back to normal.",
+                red,
+            )
+            button("Turn Focus Guard back on") {
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                toast("Installed apps → Focus Guard → turn it on.")
+            }
+        } else {
+            button("Pause for banking (InstaPay)") { startBankingPause() }
+        }
+
         heading("Setup", 18f)
         val admin = ComponentName(this, AdminReceiver::class.java)
         val dpm = getSystemService(DevicePolicyManager::class.java)
@@ -169,6 +182,48 @@ class MainActivity : Activity() {
         Prefs.setVpnWanted(this, false)
         startService(Intent(this, FilterVpnService::class.java).setAction(FilterVpnService.ACTION_STOP))
         box.postDelayed({ render() }, 800)
+    }
+
+    // ------------------------------------------------------------------ banking pause
+
+    private fun startBankingPause() {
+        if (!FilterVpnService.running) {
+            toast("Start the web filter first (step 3), then try again.")
+            return
+        }
+        val pm = packageManager
+        val apps = FilterVpnService.excludedApps(this)
+            .mapNotNull { pkg ->
+                pm.getLaunchIntentForPackage(pkg)?.let { intent ->
+                    val label = try {
+                        pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
+                    } catch (_: Exception) {
+                        pkg
+                    }
+                    Triple(pkg, label, intent)
+                }
+            }
+            .sortedBy { if (it.first.contains("instapay")) "" else it.second.lowercase() }
+        if (apps.isEmpty()) {
+            toast("No banking app found. Add it under Choose more trusted apps.")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Pause for banking")
+            .setMessage(
+                "Focus Guard stops watching the screen so the bank app can open. " +
+                    "Until you turn Focus Guard back on in Accessibility, only banking apps have internet.",
+            )
+            .setItems(apps.map { "Open " + it.second }.toTypedArray()) { _, i ->
+                Prefs.setBankingPause(this, true)
+                FilterVpnService.restart(this)
+                GuardAccessibilityService.instance?.pauseForBanking()
+                box.postDelayed({
+                    startActivity(apps[i].third.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }, 1200)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     // ------------------------------------------------------------------ trusted apps
