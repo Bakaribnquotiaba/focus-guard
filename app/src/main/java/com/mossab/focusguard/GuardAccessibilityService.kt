@@ -98,9 +98,8 @@ class GuardAccessibilityService : AccessibilityService() {
         override fun onReceive(c: Context, i: Intent) {
             val pkg = i.data?.schemeSpecificPart ?: return
             datingCache.remove(pkg)
-            if (pkg in Prefs.trustedApps(this)) return
-
-        if (isDating(pkg)) {
+            if (pkg in Prefs.trustedApps(c)) return
+            if (isDating(pkg)) {
                 Prefs.setPendingUninstall(c, pkg)
                 Penalty.trigger(c, "A dating app was installed")
             }
@@ -195,6 +194,8 @@ class GuardAccessibilityService : AccessibilityService() {
             if (stateChanged) enforceLockout()
             return
         }
+
+        if (pkg in Prefs.trustedApps(this)) return
 
         if (isDating(pkg)) {
             if (once("dating", 5000)) {
