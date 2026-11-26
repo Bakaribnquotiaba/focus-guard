@@ -27,6 +27,9 @@ class FilterVpnService : VpnService() {
         /** Banking apps found on the phone plus the ones picked by hand. */
         fun excludedApps(c: Context): Set<String> {
             val set = HashSet(Prefs.trustedApps(c))
+            // Obtainium keeps Focus Guard updated, so it stays online even during a banking pause.
+            set.add("dev.imranr.obtainium")
+            set.add("dev.imranr.obtainium.fdroid")
             try {
                 @Suppress("DEPRECATION")
                 c.packageManager.getInstalledApplications(0).forEach {

@@ -378,6 +378,11 @@ class GuardAccessibilityService : AccessibilityService() {
         val root = rootInActiveWindow ?: return
         if (root.packageName?.toString() != pkg) return
         if (!containsText(root, Rules.APP_NAME)) return
+        // Let updates through (installed from Obtainium); still block uninstalling.
+        if (pkg.lowercase().contains("packageinstaller") &&
+            (containsText(root, "update") || containsText(root, "تحديث")) &&
+            !containsText(root, "uninstall") && !containsText(root, "إلغاء التثبيت")
+        ) return
         performGlobalAction(GLOBAL_ACTION_BACK)
         handler.postDelayed({ goHome() }, 150)
         if (once("settings-msg", 3000)) {
