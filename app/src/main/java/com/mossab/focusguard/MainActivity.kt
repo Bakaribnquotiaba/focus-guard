@@ -69,10 +69,7 @@ class MainActivity : Activity() {
                 "Banking pause is on. Only banking apps have internet. When you're done, turn Focus Guard back on in Accessibility and everything goes back to normal.",
                 red,
             )
-            button("Turn Focus Guard back on") {
-                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                toast("Installed apps → Focus Guard → turn it on.")
-            }
+            button("Turn Focus Guard back on") { openOwnAccessibilitySwitch() }
         } else {
             button("Pause for banking (InstaPay)") { startBankingPause() }
         }
@@ -199,6 +196,19 @@ class MainActivity : Activity() {
     }
 
     // ------------------------------------------------------------------ banking pause
+
+    /** Opens Focus Guard's own accessibility switch directly when Android allows it. */
+    private fun openOwnAccessibilitySwitch() {
+        val direct = Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS")
+            .putExtra(Intent.EXTRA_COMPONENT_NAME, ComponentName(this, GuardAccessibilityService::class.java).flattenToString())
+        try {
+            startActivity(direct)
+            toast("Turn the switch on.")
+        } catch (_: Exception) {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            toast("Installed apps → Focus Guard → turn it on.")
+        }
+    }
 
     private fun showGrantHelp() {
         AlertDialog.Builder(this)
