@@ -15,16 +15,16 @@ object Rules {
     val FACEBOOK_PACKAGES = setOf("com.facebook.katana", "com.facebook.lite")
     private val FACEBOOK_URL_MARKERS = listOf("facebook.com", "fb.com/", "fb.watch")
 
-    data class Slot(val hour: Int, val minute: Int) {
+    data class Slot(val hour: Int, val minute: Int, val minutes: Int = SLOT_MINUTES) {
         val startMinute: Int get() = hour * 60 + minute
         fun label(): String = String.format("%02d:%02d", hour, minute)
     }
 
     const val SLOT_MINUTES = 5
 
-    /** 12 slots x 5 minutes = 1 hour of Facebook per day. */
+    /** 12 slots x 5 minutes, plus a longer 10:00-10:30 slot. */
     val FACEBOOK_SLOTS = listOf(
-        Slot(9, 30), Slot(11, 0), Slot(12, 30), Slot(13, 30), Slot(15, 0), Slot(16, 30),
+        Slot(9, 30), Slot(10, 0, 30), Slot(11, 0), Slot(12, 30), Slot(13, 30), Slot(15, 0), Slot(16, 30),
         Slot(17, 30), Slot(18, 30), Slot(19, 30), Slot(20, 30), Slot(21, 30), Slot(22, 30),
     )
 
@@ -188,7 +188,7 @@ object Rules {
 
     fun currentSlot(now: Calendar = Calendar.getInstance()): Slot? {
         val m = minuteOfDay(now)
-        return FACEBOOK_SLOTS.firstOrNull { m >= it.startMinute && m < it.startMinute + SLOT_MINUTES }
+        return FACEBOOK_SLOTS.firstOrNull { m >= it.startMinute && m < it.startMinute + it.minutes }
     }
 
     fun nextSlot(now: Calendar = Calendar.getInstance()): Slot {

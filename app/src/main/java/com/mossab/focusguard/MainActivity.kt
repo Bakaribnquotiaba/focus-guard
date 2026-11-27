@@ -146,7 +146,7 @@ class MainActivity : Activity() {
         note(slots)
         note(
             if (current != null && Rules.isAutoTime(this)) "Open now until ${endOf(current)}."
-            else "Closed now. Next slot: ${Rules.nextSlot(now).label()} (5 minutes each).",
+            else "Closed now. Next slot: ${Rules.nextSlot(now).label()} (5 minutes each, 10:00 is 30 minutes).",
         )
         note("Attempts outside a slot today: ${Prefs.attempts(this, "facebook")} (the 3rd locks the phone).")
 
@@ -179,7 +179,7 @@ class MainActivity : Activity() {
     }
 
     private fun endOf(s: Rules.Slot): String {
-        val m = s.startMinute + Rules.SLOT_MINUTES
+        val m = s.startMinute + s.minutes
         return String.format("%02d:%02d", m / 60, m % 60)
     }
 
