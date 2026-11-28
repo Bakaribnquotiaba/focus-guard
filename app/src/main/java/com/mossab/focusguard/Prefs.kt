@@ -25,6 +25,8 @@ object Prefs {
     fun unlockedUntil(c: Context) = sp(c).getLong("unlockedUntil", 0L)
     fun setUnlockedUntil(c: Context, t: Long) = sp(c).edit().putLong("unlockedUntil", t).apply()
     fun isUnlocked(c: Context) = System.currentTimeMillis() < unlockedUntil(c)
+    fun facebookFreeUntil(c: Context) = sp(c).getLong("facebookFreeUntil", 0L)
+    fun setFacebookFreeUntil(c: Context, t: Long) = sp(c).edit().putLong("facebookFreeUntil", t).apply()
 
     // ---- Lockout ----
     fun lockoutUntil(c: Context) = sp(c).getLong("lockoutUntil", 0L)

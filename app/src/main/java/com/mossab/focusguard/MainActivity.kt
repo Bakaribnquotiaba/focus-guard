@@ -163,6 +163,22 @@ class MainActivity : Activity() {
             if (Prefs.isUnlocked(this)) pickTrustedApps() else askPin { pickTrustedApps() }
         }
 
+        heading("Open Facebook for today", 18f)
+        if (System.currentTimeMillis() < Prefs.facebookFreeUntil(this)) {
+            note("Facebook is open until the end of today (23:59).", green)
+            button("Close Facebook again now") { Prefs.setFacebookFreeUntil(this, 0); render() }
+        } else {
+            button("Open Facebook until end of today") {
+                askPin {
+                    val end = java.util.Calendar.getInstance().apply {
+                        set(java.util.Calendar.HOUR_OF_DAY, 23); set(java.util.Calendar.MINUTE, 59)
+                        set(java.util.Calendar.SECOND, 59); set(java.util.Calendar.MILLISECOND, 999)
+                    }
+                    Prefs.setFacebookFreeUntil(this, end.timeInMillis); render()
+                }
+            }
+        }
+
         heading("PIN", 18f)
         if (Prefs.isUnlocked(this)) {
             val until = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(Prefs.unlockedUntil(this)))

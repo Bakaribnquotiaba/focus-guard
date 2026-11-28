@@ -197,5 +197,6 @@ object Rules {
     }
 
     fun facebookAllowed(context: Context): Boolean =
-        isAutoTime(context) && currentSlot() != null
+        System.currentTimeMillis() < Prefs.facebookFreeUntil(context) ||
+            (isAutoTime(context) && currentSlot() != null)
 }
